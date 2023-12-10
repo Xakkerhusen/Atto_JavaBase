@@ -17,37 +17,40 @@ import org.example.service.TerminalService;
 import org.example.service.TransactionService;
 import org.example.utils.ScannerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Setter
-@org.springframework.stereotype.Controller
-public class Controller {
+@Controller
+public class Controllers {
 
     static ScannerUtils scanner = new ScannerUtils();
 
-//    ProfileService userService = new ProfileService();
-//    CardService cardService = new CardService();
-//    TerminalService terminalService = new TerminalService();
-//    TransactionService transactionService = new TransactionService();
-//    TransactionRepository transactionRepository = new TransactionRepository();
-
-    //  spring da tajriba oxshamadi
-//    @Autowired(required = false)
+    @Autowired(required = false)
+      private ProfileDTO profile;
+    @Autowired(required = false)
    private ProfileService profileService;
-//    @Autowired(required = false)
+    @Autowired(required = false)
    private CardService cardService;
-//    @Autowired(required = false)
+    @Autowired(required = false)
    private TerminalService terminalService;
-//    @Autowired(required = false)
+    @Autowired(required = false)
    private TransactionService transactionService;
-//    @Autowired(required = false)
+    @Autowired(required = false)
    private TransactionRepository transactionRepository;
+    @Autowired
+   private DatabaseUtil databaseUtil;
 
+    private void showMain() {
+        System.out.print("""
+                 1. Login        
+                 2. Registration 
+                """);
+    }
     public void start() {
         System.out.println();
-        DatabaseUtil databaseUtil = new DatabaseUtil();
         databaseUtil.createProfileTable();
         databaseUtil.createCardTable();
         databaseUtil.createTerminalTable();
@@ -75,18 +78,7 @@ public class Controller {
             phone = scanner.nextLine("Enter phoneNumber: ");
             password = scanner.nextLine("Enter password: ");
         } while (phone == null || password == null);
-
-
-        ProfileDTO profile = new ProfileDTO();
-        profile.setName(name);
-        profile.setSurname(surname);
-        profile.setPhone(phone);
-        profile.setPassword(password);
-        profile.setProfileRole(ProfileRole.USER);
-
-
-        boolean result = profileService.registration(profile);
-
+        boolean result = profileService.registration(name,surname,phone,password,ProfileRole.USER);
         if (result) {
             System.out.println("Successful 👌👌👌");
         } else {
@@ -96,29 +88,27 @@ public class Controller {
     }
 
     private void login() {
-        String phoneNumber = null;
-        String password = null;
+        String phoneNumber;
+        String password;
         do {
             phoneNumber = scanner.nextLine("Enter phoneNumber:");
             password = scanner.nextLine(" Enter password:");
-//            System.out.println();
         } while (phoneNumber.trim().isEmpty() || password.trim().isEmpty());
-        ProfileDTO profileDTO = new ProfileDTO();
-        profileDTO.setPhone(phoneNumber);
-        profileDTO.setPassword(password);
-
-        ProfileDTO profile = profileService.login(profileDTO);
-        if (profile == null) {
+        List<ProfileDTO> result = profileService.login(phoneNumber, password);
+        if (result==null) {
             System.out.println("Phone number or password error try again or through registration!!!");
         } else {
-            if (profile.getStatus().equals(Status.NO_ACTIVE)) {
+            for (ProfileDTO profileDTO : result) {
+
+            if (profileDTO.getStatus().equals(Status.NO_ACTIVE)) {
                 System.out.println("Not found!!!");
                 return;
             }
-            if (profile.getProfileRole().equals(ProfileRole.USER)) {
-                userMenu(profile);
+            if (profileDTO.getProfileRole().equals(ProfileRole.USER)) {
+                userMenu(profileDTO);
             } else {
-                adminMenu(profile);
+                adminMenu(profileDTO);
+            }
             }
         }
 
@@ -149,7 +139,7 @@ public class Controller {
                 }
                 case 1 -> cardMenu(profile);
                 case 2 -> terminalMenu();
-                case 3 -> profileMenu(profile);
+                case 3 -> profileMenu();
                 case 4 -> transactionList();
                 case 5 -> showCompanyCardBalance();
                 case 6 -> statisticmenu();
@@ -173,6 +163,7 @@ public class Controller {
 
     private void userMenu(ProfileDTO profile) {
         do {
+            System.out.println("-*-*--*-*-USER MENU*-*-**-*-*-");
             showUserMenu();
             int action = getAction();
             switch (action) {
@@ -182,7 +173,7 @@ public class Controller {
                 case 1 -> addCardByUser(profile);
                 case 2 -> showCardsByUser(profile);
                 case 3 -> changeCardStatusByUser(profile);
-                case 4 -> deleteCardByUser(profile);
+                case 4 -> deleteCardByUser();
                 case 5 -> reFillCard(profile);
                 case 6 -> transactionByUser();
                 case 7 -> makePayment();
@@ -216,7 +207,7 @@ public class Controller {
                 case 0 -> {
                     return;
                 }
-                case 1 -> paymentsToday();///chala
+                case 1 -> paymentsToday();
                 case 2 -> dailyFees();
                 case 3 -> interimPayments();
                 case 4 -> showCompanyCardBalance();
@@ -260,7 +251,7 @@ public class Controller {
 
     }
 
-    private void profileMenu(ProfileDTO profile) {
+    private void profileMenu() {
 
         do {
             System.out.println("***** PROFILE SETTINGS *****");
@@ -324,9 +315,9 @@ public class Controller {
                 case 0 -> {
                     return;
                 }
-                case 1 -> createCardByAmin(profile);
+                case 1 -> createCardByAmin();
                 case 2 -> showCardsByAdmin();
-                case 3 -> updateCardByAdmin(profile);
+                case 3 -> updateCardByAdmin();
                 case 4 -> changeCardStatusByAdmin();
                 case 5 -> deleteCardByAdmin();
                 default -> System.out.println("Wrong action selected!!!");
@@ -459,28 +450,28 @@ public class Controller {
             terminalCode = scanner.nextLine("Enter terminal code: ");
             terminalAddress = scanner.nextLine("Enter terminal address: ");
         } while (terminalCode.trim().isEmpty() || terminalAddress.trim().isEmpty());
-        TerminalDTO terminal = new TerminalDTO();
-        terminal.setCode(terminalCode);
-
-        terminalService.updateTerminal(terminal, terminalAddress);
+        terminalService.updateTerminal(terminalCode, terminalAddress);
     }
 
     private void showTerminalList() {
-        terminalService.showTerminalList();
+        List<TerminalDTO> terminalDTOS = terminalService.showTerminalList();
+        if (!terminalDTOS.isEmpty()){
+            for (TerminalDTO terminalDTO : terminalDTOS) {
+                System.out.println(terminalDTO);
+            }
+        }else {
+            System.out.println("Terminal not available!!! ");
+        }
     }
 
     private void createTerminal() {
-//        (code unique,address)
         String terminalCode, terminalAddress;
         do {
             terminalCode = scanner.nextLine("Enter terminal code: ");
             terminalAddress = scanner.nextLine("Enter terminal address: ");
         } while (terminalCode.trim().isEmpty() || terminalAddress.trim().isEmpty());
-        TerminalDTO terminal = new TerminalDTO();
-        terminal.setCode(terminalCode);
-        terminal.setAddress(terminalAddress);
 
-        terminalService.creatTerminal(terminal);
+        terminalService.creatTerminal(terminalCode,terminalAddress);
 
     }
 
@@ -516,28 +507,20 @@ public class Controller {
         }
     }
 
-    private void updateCardByAdmin(ProfileDTO profile) {
-//        3. Update Card (number,exp_date)
+    private void updateCardByAdmin() {
         String cardNumber = scanner.nextLine("Enter Card number: ");
-        LocalDate expDate = scanner.nextLocalDate("Enter expiration date: ");
-
-        cardService.updateCard(cardNumber, expDate, profile);
-
+        LocalDate expDate = scanner.nextLocalDate("Enter expiration dateeeee: ");
+        cardService.updateCard(cardNumber, expDate);
     }
 
-    private void createCardByAmin(ProfileDTO profile) {
+    private void createCardByAmin() {
         String cardNumber;
         int year;
         do {
             cardNumber = scanner.nextLine("Enter Card number: ");
             year = scanner.nextInt("Enter the expiration date (3-10): ");
         } while (cardNumber.trim().isEmpty() || year <= 0);
-        CardDTO card = new CardDTO();
-        card.setNumber(cardNumber);
-        card.setExp_date(LocalDate.now().plusYears(year));
-        card.setStatus(Status.NO_ACTIVE);
-//        card.setPhone(profile.getPhone());
-        cardService.createCard(card);
+        cardService.createCard(cardNumber,LocalDate.now().plusYears(year),Status.NO_ACTIVE);
 
     }
 
@@ -548,15 +531,16 @@ public class Controller {
 
     }
 
-    private void deleteCardByUser(ProfileDTO profile) {
+    private void deleteCardByUser() {
         String cardNumber = scanner.nextLine("Enter Card number: ");
-        cardService.deleteCard(profile, cardNumber);
+        cardService.deleteCard( cardNumber);
 
     }
 
     private void changeCardStatusByUser(ProfileDTO profile) {
         String cardNumber = scanner.nextLine("Enter Card number: ");
-        cardService.changeCardStatusByUser(profile, cardNumber);
+        String status = scanner.nextLine("Select a status(ACTIVE,NO_ACTIVE,BLOCKED): ");
+        cardService.changeCardStatusByUser(profile, cardNumber,status);
     }
 
     private void showCardsByUser(ProfileDTO profile) {
@@ -594,12 +578,7 @@ public class Controller {
         return option;
     }
 
-    private void showMain() {
-        System.out.print("""
-                 1. Login        
-                 2. Registration 
-                """);
-    }
+
 
 
 }

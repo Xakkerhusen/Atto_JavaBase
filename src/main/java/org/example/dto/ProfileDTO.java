@@ -3,14 +3,16 @@ package org.example.dto;
 import lombok.*;
 import org.example.enums.ProfileRole;
 import org.example.enums.Status;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@NoArgsConstructor
+//@AllArgsConstructor
+//@NoArgsConstructor
 @Getter
 @Setter
 @ToString
+//@Component
 public class ProfileDTO {
     private String name; // <1>
     private String surname; // <2>

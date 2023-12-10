@@ -9,35 +9,31 @@ import org.example.enums.Status;
 import org.example.enums.TransactionType;
 import org.example.repository.CardRepository;
 import org.example.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 @Setter
 @Service
 public class CardService {
-//    CardRepository cardRepository = new CardRepository();
-//    TransactionRepository transactionRepository = new TransactionRepository();
-
-    CardRepository cardRepository ;
-    TransactionRepository transactionRepository;
-
-/*//spring da tajriba oxshamadi
-    CardRepository cardRepository ;
-    TransactionRepository transactionRepository;*/
-
-    public boolean createCard(CardDTO card) {
+@Autowired
+   private CardRepository cardRepository ;
+@Autowired
+   private TransactionRepository transactionRepository;
+    public boolean createCard(String cardNumber, LocalDate localDate, Status status) {
         List<CardDTO> cardList = getCardList();
         if (cardList != null) {
             for (CardDTO cardDTO : cardList) {
-                if (cardDTO.getNumber().equals(card.getNumber())) {
+                if (cardDTO.getNumber().equals(cardNumber)) {
                     System.out.println("Card is available !!!");
                     return false;
                 }
             }
         }
-        boolean result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.createCard(card);
+        boolean result =cardRepository.createCard(cardNumber,localDate,status);
         if (result) {
             System.out.println("Card created successfully 👌👌👌");
         } else {
@@ -47,7 +43,7 @@ public class CardService {
     }
 
     public List<CardDTO> getCardList() {
-        List<CardDTO> cardList =/* Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.getCardList();
+        List<CardDTO> cardList =cardRepository.getCardList();
         return cardList;
     }
 
@@ -68,25 +64,38 @@ public class CardService {
 
     public boolean addCard(ProfileDTO profile, String cardNumber) {
         List<CardDTO> cardList = getCardList();
+        ResponsDTO responsDTO=null;
         for (CardDTO dto : cardList) {
             if (dto.getStatus().equals(Status.NO_ACTIVE)) {
                 if (dto.getNumber() != null) {
                     if (dto.getNumber().equals(cardNumber)) {
-                        boolean res =/* Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.addCard(dto.getNumber(), profile.getPhone());
-                        return res;
+                         responsDTO = cardRepository.addCard(dto.getNumber(), profile.getPhone());
+                       break;
                     }
                 }
             }
         }
-        return false;
+        if (responsDTO==null){
+            System.out.println("Enter another card number!!!");
+            return false;
+        }else if (responsDTO.success()) {
+            System.out.println(responsDTO.message());
+        }else {
+            System.out.println(responsDTO.message());
+        }
+        return responsDTO.success();
     }
 
-    public boolean changeCardStatusByUser(ProfileDTO profile, String cardNumber) {
+    public boolean changeCardStatusByUser(ProfileDTO profile, String cardNumber, String status) {
         if (cardNumber.trim().isEmpty()) {
             System.out.println("Card not founded!!!");
             return false;
         }
-        ResponsDTO result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.changeStatus(cardNumber, profile);
+        if (!(status.equals("ACTIVE")||status.equals("NO_ACTIVE")||status.equals("BLOCKED"))){
+            System.out.println("Enter one of the (ACTIVE,NO_ACTIVE,BLOCKED)");
+            return false;
+        }
+        ResponsDTO result = cardRepository.changeStatus(cardNumber, profile,status);
         if (result.success()) {
             System.out.println(result.message());
         } else {
@@ -95,8 +104,8 @@ public class CardService {
         return result.success();
     }
 
-    public void deleteCard(ProfileDTO profile, String cardNumber) {
-        ResponsDTO result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.delete(cardNumber, profile);
+    public void deleteCard(String cardNumber) {
+        ResponsDTO result =cardRepository.delete(cardNumber);
         if (result.success()) {
             System.out.println(result.message());
         } else {
@@ -106,9 +115,8 @@ public class CardService {
     }
 
     public void reFillCard(ProfileDTO profile, String cardNumber, double amount, TransactionType type) {
-        ResponsDTO result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.reFill(cardNumber, profile, amount);
-        /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.creadTransaction(cardNumber, null, amount, type);
-
+        ResponsDTO result =cardRepository.reFill(cardNumber, profile, amount);
+        transactionRepository.creadTransaction(cardNumber, null, amount, type);
         if (result.success()) {
             System.out.println(result.message());
         } else {
@@ -116,12 +124,12 @@ public class CardService {
         }
     }
 
-    public void updateCard(String cardNumber, LocalDate expDate, ProfileDTO profile) {
+    public void updateCard(String cardNumber, LocalDate expDate) {
         if (cardNumber.trim().isEmpty()) {
             System.out.println("Card not founded!!!");
             return;
         }
-        ResponsDTO result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.update(cardNumber, expDate, profile);
+        ResponsDTO result = cardRepository.update(cardNumber, expDate);
         if (result.success()) {
             System.out.println(result.message());
         } else {
@@ -131,7 +139,7 @@ public class CardService {
     }
 
     public void changeProfileStatus(Status status, String phoneNumber) {
-        ResponsDTO result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.changeProfileStatus(status, phoneNumber);
+        ResponsDTO result =cardRepository.changeProfileStatus(status, phoneNumber);
         if (result.success()) {
             System.out.println(result.message());
         } else {
@@ -142,15 +150,14 @@ public class CardService {
     public void changeCardStatusByAdmin(String newStatus, String cardNumber) {
         if (newStatus.equals("ACTIVE") || newStatus.equals("NO_ACTIVE") || newStatus.equals("BLOCKED")) {
 
-            List<CardDTO> cardDTOList = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.getCardList();
+            List<CardDTO> cardDTOList =cardRepository.getCardList();
             ResponsDTO result = null;
             if (cardDTOList == null) {
                 System.out.println("Card if not exist!!!");
-                return;
             } else {
                 for (CardDTO cardDTO : cardDTOList) {
                     if (cardDTO.getNumber().equals(cardNumber)) {
-                        result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.changeCardStatusByAdmin(cardNumber, newStatus);
+                        result =cardRepository.changeCardStatusByAdmin(cardNumber, newStatus);
                         break;
                     }
                 }
@@ -171,11 +178,11 @@ public class CardService {
     }
 
     public void deleteCardByAdmin(String cardNumber) {
-        List<CardDTO> cardDTOList = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.getCardList();
+        List<CardDTO> cardDTOList =cardRepository.getCardList();
         ResponsDTO result = null;
         for (CardDTO cardDTO : cardDTOList) {
             if (cardDTO.getNumber().equals(cardNumber)) {
-                result = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.deleteCardByAdmin(cardNumber);
+                result =cardRepository.deleteCardByAdmin(cardNumber);
                 break;
             }
         }
@@ -191,7 +198,7 @@ public class CardService {
     }
 
     public boolean chackCardCompany() {
-        List<CardDTO> cardList = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.getCardList();
+        List<CardDTO> cardList =cardRepository.getCardList();
         for (CardDTO cardDTO : cardList) {
             if (cardDTO.getNumber().equals("9860454217805332")) {
                 return true;
@@ -201,14 +208,14 @@ public class CardService {
     }
 
     public void showCompanyCardBalance() {
-        List<CardDTO> cardDTOList = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.getCardList();
+        List<CardDTO> cardDTOList =cardRepository.getCardList();
         List<CardDTO> cardDTOList1 = null;
         if (cardDTOList == null) {
             System.out.println("No information found!!!");
         } else {
             for (CardDTO cardDTO : cardDTOList) {
                 if (cardDTO.getNumber().equals("9860454217805332") && cardDTO.getStatus().equals(Status.ACTIVE)) {
-                     cardDTOList1 = /*Appl.applicationContext.getBean("cardRepository",CardRepository.class)*/cardRepository.showCompanyCardBalance();
+                     cardDTOList1 =cardRepository.showCompanyCardBalance();
                 }
             }
 
@@ -222,4 +229,6 @@ public class CardService {
         }
 
     }
+
+
 }

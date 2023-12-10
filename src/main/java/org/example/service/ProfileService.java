@@ -1,36 +1,34 @@
 package org.example.service;
 
 import lombok.Setter;
-import org.example.controller.Appl;
 import org.example.dto.ProfileDTO;
+import org.example.enums.ProfileRole;
 import org.example.enums.Status;
 import org.example.repository.ProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 @Setter
 @Service
 public class ProfileService {
-//    ProfileRepository profileRepository=new ProfileRepository();
-
+@Autowired
     private  ProfileRepository profileRepository;
 
-//ProfileRepository profileRepository;//spring da tajriba oxshamadi
-
-    public ProfileDTO login(ProfileDTO profileDTO) {
-        ProfileDTO profile = /*Appl.applicationContext.getBean("profileRepository", ProfileRepository.class)*/profileRepository.login(profileDTO);
-        return profile;
+        public List<ProfileDTO> login(String phoneNumber, String password) {
+        List<ProfileDTO> result = profileRepository.login(phoneNumber, password);
+        return result;
     }
 
-    public boolean registration(ProfileDTO profile) {
+    public boolean registration(String name, String surname, String phone, String password, ProfileRole profileRole) {
 
-        boolean result = /*Appl.applicationContext.getBean("profileRepository", ProfileRepository.class)*/profileRepository.registration(profile);
+        boolean result = profileRepository.registration(name,surname,phone,password,profileRole);
         return result;
     }
 
 
     public void showProfileList() {
-        List<ProfileDTO> profiles = /*Appl.applicationContext.getBean("profileRepository", ProfileRepository.class)*/profileRepository.getProfileList();
+        List<ProfileDTO> profiles = profileRepository.getProfileList();
         if (profiles != null) {
             for (ProfileDTO profile : profiles) {
                 if (profile.getStatus().equals(Status.ACTIVE)) {

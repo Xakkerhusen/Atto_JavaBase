@@ -1,7 +1,6 @@
 package org.example.service;
 
 import lombok.Setter;
-import org.example.controller.Appl;
 import org.example.dto.CardDTO;
 import org.example.dto.ResponsDTO;
 import org.example.dto.TerminalDTO;
@@ -11,37 +10,32 @@ import org.example.enums.TransactionType;
 import org.example.repository.CardRepository;
 import org.example.repository.TerminalRepository;
 import org.example.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+
 @Setter
 @Service
 public class TransactionService {
-//    CardRepository cardRepository = new CardRepository();
-//    CardService cardService = new CardService();
-//    TerminalRepository terminalRepository = new TerminalRepository();
-//    TerminalService terminalService = new TerminalService();
-//    TransactionRepository transactionRepository = new TransactionRepository();
+    @Autowired
+    private CardRepository cardRepository;
+    @Autowired
+    private CardService cardService;
+    @Autowired
+    private TerminalRepository terminalRepository;
+    @Autowired
+    private TerminalService terminalService;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
-   private CardRepository cardRepository ;
-   private CardService cardService;
-   private TerminalRepository terminalRepository;
-   private TerminalService terminalService;
-   private TransactionRepository transactionRepository;
-
-/*//    spring da tajriba oxshamadi
-    CardRepository cardRepository;
-    CardService cardService;
-    TerminalRepository terminalRepository;
-    TerminalService terminalService;
-    TransactionRepository transactionRepository;*/
     public void makePayment(String cardNumber, String terminalCode, double amount, TransactionType type) {
-        List<CardDTO> cardDTOList = /*Appl.applicationContext.getBean("cardRepository", CardRepository.class)*/cardRepository.getCardList();
-        List<TerminalDTO> terminalDTOS = /*Appl.applicationContext.getBean("terminalRepository", TerminalRepository.class)*/terminalRepository.getTerminalList();
+        List<CardDTO> cardDTOList =cardRepository.getCardList();
+        List<TerminalDTO> terminalDTOS =terminalRepository.getTerminalList();
         ResponsDTO resultTerminal = null;
-        boolean terminalChecking = Appl.applicationContext.getBean("terminalService", TerminalService.class).chackTerminalCode(terminalCode);
-        boolean checkCardCompany = Appl.applicationContext.getBean("cardService", CardService.class).chackCardCompany();
+        boolean terminalChecking =terminalService.chackTerminalCode(terminalCode);
+        boolean checkCardCompany =cardService.chackCardCompany();
         ResponsDTO resultCard = null;
         if (cardDTOList == null) {
             System.out.println("Card if not exist!!!");
@@ -54,9 +48,9 @@ public class TransactionService {
                 if (cardDTO.getNumber().equals(cardNumber)
                         && terminalChecking
                         && cardDTO.getStatus().equals(Status.ACTIVE) && checkCardCompany) {
-                    resultTerminal = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.creadTransaction(cardNumber, terminalCode, amount, type);
-                    resultCard = /*Appl.applicationContext.getBean("cardRepository", CardRepository.class)*/cardRepository.updateCardBalance(cardNumber, amount);
-                    /*Appl.applicationContext.getBean("cardRepository", CardRepository.class)*/cardRepository.updateCardCompany(amount);
+                    resultTerminal =transactionRepository.creadTransaction(cardNumber, terminalCode, amount, type);
+                    resultCard =cardRepository.updateCardBalance(cardNumber, amount);
+                    cardRepository.updateCardCompany(amount);
                 }
             }
 
@@ -74,22 +68,21 @@ public class TransactionService {
 
         }
 
-
     }
 
     public boolean getTransaction(String cardNumber) {
-        List<TransactionDTO> transactionList = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.getTransactionList(cardNumber);
+        List<TransactionDTO> transactionList =transactionRepository.getTransactionList(cardNumber);
         return transactionList.isEmpty();
     }
 
     public boolean getTransactionToday() {
-        List<TransactionDTO> transactionDTOS = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.gettransactionToday();
+        List<TransactionDTO> transactionDTOS =transactionRepository.gettransactionToday();
         return transactionDTOS.isEmpty();
 
     }
 
     public boolean transactionList() {
-        List<TransactionDTO> allTransactions = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.getAllTransactions();
+        List<TransactionDTO> allTransactions =transactionRepository.getAllTransactions();
         return allTransactions.isEmpty();
     }
 
@@ -98,7 +91,7 @@ public class TransactionService {
             System.out.println("Enter the day in  (yyyy-mm-dd) format!!!");
             return false;
         } else {
-            List<TransactionDTO> dailyFees = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.dailyFees(day);
+            List<TransactionDTO> dailyFees =transactionRepository.dailyFees(day);
             return dailyFees != null;
         }
 
@@ -110,14 +103,14 @@ public class TransactionService {
             System.out.println("Enter the day in  (yyyy-mm-dd) format!!!");
             return false;
         } else {
-            List<TransactionDTO> dailyFees = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.interimPayments(day1, day2);
+            List<TransactionDTO> dailyFees =transactionRepository.interimPayments(day1, day2);
             return dailyFees != null;
         }
 
     }
 
     public boolean transactionByTerminal(String terminalCode) {
-        List<TransactionDTO> transactionDTOS = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.transactionByTerminal(terminalCode);
+        List<TransactionDTO> transactionDTOS =transactionRepository.transactionByTerminal(terminalCode);
         if (transactionDTOS.isEmpty()) {
             return false;
         }
@@ -125,7 +118,7 @@ public class TransactionService {
     }
 
     public boolean transactionByCard(String cardNumber) {
-        List<TransactionDTO> transactionDTOS = /*Appl.applicationContext.getBean("transactionRepository", TransactionRepository.class)*/transactionRepository.transactionByCard(cardNumber);
+        List<TransactionDTO> transactionDTOS =transactionRepository.transactionByCard(cardNumber);
         if (transactionDTOS.isEmpty()) {
             return false;
         }

@@ -1,94 +1,42 @@
 package org.example.repository;
 
 import lombok.Setter;
-import org.example.db.DatabaseUtil;
 import org.example.dto.ProfileDTO;
 import org.example.enums.ProfileRole;
-import org.example.enums.Status;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.LinkedList;
 import java.util.List;
+
 @Setter
 @Repository
 public class ProfileRepository {
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    public ProfileDTO login(ProfileDTO profileDTO) {
-        try {
-            Connection connection = DatabaseUtil.getConnection();
-            String sql = "select * from profile where phone=? and password=?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, profileDTO.getPhone());
-            preparedStatement.setString(2, profileDTO.getPassword());
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                ProfileDTO profile = new ProfileDTO();
-                profile.setName(resultSet.getString("name"));
-                profile.setSurname(resultSet.getString("surname"));
-                profile.setPhone(resultSet.getString("phone"));
-                profile.setPassword(resultSet.getString("password"));
-                profile.setCreated_date(resultSet.getTimestamp("created_date").toLocalDateTime());
-                profile.setStatus(Status.valueOf(resultSet.getString("status")));
-                profile.setProfileRole(ProfileRole.valueOf(resultSet.getString("profile_role")));
-                connection.close();
-                return profile;
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
+    public List<ProfileDTO> login(String phoneNumber, String password) {
+        List<ProfileDTO> res;
+        String sql = "select * from profile where phone=? and password=?";
+        res=jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ProfileDTO.class),phoneNumber,password);
+        return res;
     }
 
-    public boolean registration(ProfileDTO profile) {
-        int res = 0;
-        try {
-            Connection connection = DatabaseUtil.getConnection();
-            String sql = "insert into profile(name,surname,phone,password,profile_role) values (?,?,?,?,?)";
 
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-
-            preparedStatement.setString(1, profile.getName());
-            preparedStatement.setString(2, profile.getSurname());
-            preparedStatement.setString(3, profile.getPhone());
-            preparedStatement.setString(4, profile.getPassword());
-            preparedStatement.setString(5, profile.getProfileRole().toString());
-
-
-            res = preparedStatement.executeUpdate();
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public boolean registration(String name, String surname, String phone, String password, ProfileRole profileRole) {
+        int res;
+        String sql = "insert into profile(name,surname,phone,password,profile_role) values (?,?,?,?,?)";
+        res = jdbcTemplate.update(sql, name, surname, phone, password, profileRole.name());
         return res != 0;
-
     }
 
     public List<ProfileDTO> getProfileList() {
-        List<ProfileDTO> profiles = new LinkedList<>();
-        try {
-            Connection connection = DatabaseUtil.getConnection();
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery("select * from profile");
-            while (resultSet.next()) {
-                ProfileDTO profile = new ProfileDTO();
-                profile.setName(resultSet.getString("name"));
-                profile.setSurname(resultSet.getString("surname"));
-                profile.setPhone(resultSet.getString("phone"));
-                profile.setPassword(resultSet.getString("password"));
-                profile.setCreated_date(resultSet.getTimestamp("created_date").toLocalDateTime());
-                profile.setStatus(Status.valueOf(resultSet.getString("status")));
-                profile.setProfileRole(ProfileRole.valueOf(resultSet.getString("profile_role")));
-                profiles.add(profile);
-            }
-            connection.close();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        List<ProfileDTO> profiles;
+        String sql = "select * from profile";
+        profiles = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(ProfileDTO.class));
         return profiles;
     }
+
+
 }
