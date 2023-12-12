@@ -29,19 +29,19 @@ public class Controllers {
     static ScannerUtils scanner = new ScannerUtils();
 
     @Autowired(required = false)
-      private ProfileDTO profile;
+    private ProfileDTO profile;
     @Autowired(required = false)
-   private ProfileService profileService;
+    private ProfileService profileService;
     @Autowired(required = false)
-   private CardService cardService;
+    private CardService cardService;
     @Autowired(required = false)
-   private TerminalService terminalService;
+    private TerminalService terminalService;
     @Autowired(required = false)
-   private TransactionService transactionService;
+    private TransactionService transactionService;
     @Autowired(required = false)
-   private TransactionRepository transactionRepository;
+    private TransactionRepository transactionRepository;
     @Autowired
-   private DatabaseUtil databaseUtil;
+    private DatabaseUtil databaseUtil;
 
     private void showMain() {
         System.out.print("""
@@ -49,6 +49,7 @@ public class Controllers {
                  2. Registration 
                 """);
     }
+
     public void start() {
         System.out.println();
         databaseUtil.createProfileTable();
@@ -78,7 +79,7 @@ public class Controllers {
             phone = scanner.nextLine("Enter phoneNumber: ");
             password = scanner.nextLine("Enter password: ");
         } while (phone == null || password == null);
-        boolean result = profileService.registration(name,surname,phone,password,ProfileRole.USER);
+        boolean result = profileService.registration(name, surname, phone, password, ProfileRole.USER);
         if (result) {
             System.out.println("Successful 👌👌👌");
         } else {
@@ -95,20 +96,22 @@ public class Controllers {
             password = scanner.nextLine(" Enter password:");
         } while (phoneNumber.trim().isEmpty() || password.trim().isEmpty());
         List<ProfileDTO> result = profileService.login(phoneNumber, password);
-        if (result==null) {
+        if (result == null) {
             System.out.println("Phone number or password error try again or through registration!!!");
         } else {
             for (ProfileDTO profileDTO : result) {
 
-            if (profileDTO.getStatus().equals(Status.NO_ACTIVE)) {
-                System.out.println("Not found!!!");
-                return;
-            }
-            if (profileDTO.getProfileRole().equals(ProfileRole.USER)) {
-                userMenu(profileDTO);
-            } else {
-                adminMenu(profileDTO);
-            }
+                if (profileDTO.getStatus().equals(Status.NO_ACTIVE)) {
+                    System.out.println("Not found!!!");
+                    return;
+                } else if (profileDTO.getStatus().equals(Status.BLOCKED)) {
+                    System.out.println("Access is blocked ");
+                }
+                if (profileDTO.getProfileRole().equals(ProfileRole.USER)) {
+                    userMenu(profileDTO);
+                } else {
+                    adminMenu(profileDTO);
+                }
             }
         }
 
@@ -455,11 +458,11 @@ public class Controllers {
 
     private void showTerminalList() {
         List<TerminalDTO> terminalDTOS = terminalService.showTerminalList();
-        if (!terminalDTOS.isEmpty()){
+        if (!terminalDTOS.isEmpty()) {
             for (TerminalDTO terminalDTO : terminalDTOS) {
                 System.out.println(terminalDTO);
             }
-        }else {
+        } else {
             System.out.println("Terminal not available!!! ");
         }
     }
@@ -471,7 +474,7 @@ public class Controllers {
             terminalAddress = scanner.nextLine("Enter terminal address: ");
         } while (terminalCode.trim().isEmpty() || terminalAddress.trim().isEmpty());
 
-        terminalService.creatTerminal(terminalCode,terminalAddress);
+        terminalService.creatTerminal(terminalCode, terminalAddress);
 
     }
 
@@ -520,7 +523,7 @@ public class Controllers {
             cardNumber = scanner.nextLine("Enter Card number: ");
             year = scanner.nextInt("Enter the expiration date (3-10): ");
         } while (cardNumber.trim().isEmpty() || year <= 0);
-        cardService.createCard(cardNumber,LocalDate.now().plusYears(year),Status.NO_ACTIVE);
+        cardService.createCard(cardNumber, LocalDate.now().plusYears(year), Status.NO_ACTIVE);
 
     }
 
@@ -533,14 +536,14 @@ public class Controllers {
 
     private void deleteCardByUser() {
         String cardNumber = scanner.nextLine("Enter Card number: ");
-        cardService.deleteCard( cardNumber);
+        cardService.deleteCard(cardNumber);
 
     }
 
     private void changeCardStatusByUser(ProfileDTO profile) {
         String cardNumber = scanner.nextLine("Enter Card number: ");
         String status = scanner.nextLine("Select a status(ACTIVE,NO_ACTIVE,BLOCKED): ");
-        cardService.changeCardStatusByUser(profile, cardNumber,status);
+        cardService.changeCardStatusByUser(profile, cardNumber, status);
     }
 
     private void showCardsByUser(ProfileDTO profile) {
@@ -577,8 +580,6 @@ public class Controllers {
         int option = scanner.nextInt("Choose action: ");
         return option;
     }
-
-
 
 
 }

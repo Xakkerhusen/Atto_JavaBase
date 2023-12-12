@@ -31,11 +31,11 @@ public class TransactionService {
     private TransactionRepository transactionRepository;
 
     public void makePayment(String cardNumber, String terminalCode, double amount, TransactionType type) {
-        List<CardDTO> cardDTOList =cardRepository.getCardList();
-        List<TerminalDTO> terminalDTOS =terminalRepository.getTerminalList();
+        List<CardDTO> cardDTOList = cardRepository.getCardList();
+        List<TerminalDTO> terminalDTOS = terminalRepository.getTerminalList();
         ResponsDTO resultTerminal = null;
-        boolean terminalChecking =terminalService.chackTerminalCode(terminalCode);
-        boolean checkCardCompany =cardService.chackCardCompany();
+        boolean terminalChecking = terminalService.chackTerminalCode(terminalCode);
+        boolean checkCardCompany = cardService.chackCardCompany();
         ResponsDTO resultCard = null;
         if (cardDTOList == null) {
             System.out.println("Card if not exist!!!");
@@ -45,11 +45,13 @@ public class TransactionService {
             System.out.println("Amount entered error!!!");
         } else {
             for (CardDTO cardDTO : cardDTOList) {
-                if (cardDTO.getNumber().equals(cardNumber)
-                        && terminalChecking
-                        && cardDTO.getStatus().equals(Status.ACTIVE) && checkCardCompany) {
-                    resultTerminal =transactionRepository.creadTransaction(cardNumber, terminalCode, amount, type);
-                    resultCard =cardRepository.updateCardBalance(cardNumber, amount);
+                if (cardDTO.getNumber().equals(cardNumber) && terminalChecking && cardDTO.getStatus().equals(Status.ACTIVE) && checkCardCompany) {
+                    if (cardDTO.getBalance()<amount){
+                        System.out.println("There is not enough balance on the card!!!");
+                        return;
+                    }
+                    resultTerminal = transactionRepository.creadTransaction(cardNumber, terminalCode, amount, type);
+                    resultCard = cardRepository.updateCardBalance(cardNumber, amount);
                     cardRepository.updateCardCompany(amount);
                 }
             }
@@ -59,7 +61,7 @@ public class TransactionService {
             } else if (!terminalChecking) {
                 System.out.println("Terminal not found!!! ");
             } else if (resultCard == null) {
-                System.out.println("Card not found!!! ");
+                System.out.println("Card not found or card status is not active!!! ");
             } else if (resultTerminal.success()) {
                 System.out.println(resultTerminal.message());
             } else {
@@ -71,18 +73,18 @@ public class TransactionService {
     }
 
     public boolean getTransaction(String cardNumber) {
-        List<TransactionDTO> transactionList =transactionRepository.getTransactionList(cardNumber);
+        List<TransactionDTO> transactionList = transactionRepository.getTransactionList(cardNumber);
         return transactionList.isEmpty();
     }
 
     public boolean getTransactionToday() {
-        List<TransactionDTO> transactionDTOS =transactionRepository.gettransactionToday();
+        List<TransactionDTO> transactionDTOS = transactionRepository.gettransactionToday();
         return transactionDTOS.isEmpty();
 
     }
 
     public boolean transactionList() {
-        List<TransactionDTO> allTransactions =transactionRepository.getAllTransactions();
+        List<TransactionDTO> allTransactions = transactionRepository.getAllTransactions();
         return allTransactions.isEmpty();
     }
 
@@ -91,7 +93,7 @@ public class TransactionService {
             System.out.println("Enter the day in  (yyyy-mm-dd) format!!!");
             return false;
         } else {
-            List<TransactionDTO> dailyFees =transactionRepository.dailyFees(day);
+            List<TransactionDTO> dailyFees = transactionRepository.dailyFees(day);
             return dailyFees != null;
         }
 
@@ -103,14 +105,14 @@ public class TransactionService {
             System.out.println("Enter the day in  (yyyy-mm-dd) format!!!");
             return false;
         } else {
-            List<TransactionDTO> dailyFees =transactionRepository.interimPayments(day1, day2);
+            List<TransactionDTO> dailyFees = transactionRepository.interimPayments(day1, day2);
             return dailyFees != null;
         }
 
     }
 
     public boolean transactionByTerminal(String terminalCode) {
-        List<TransactionDTO> transactionDTOS =transactionRepository.transactionByTerminal(terminalCode);
+        List<TransactionDTO> transactionDTOS = transactionRepository.transactionByTerminal(terminalCode);
         if (transactionDTOS.isEmpty()) {
             return false;
         }
@@ -118,7 +120,7 @@ public class TransactionService {
     }
 
     public boolean transactionByCard(String cardNumber) {
-        List<TransactionDTO> transactionDTOS =transactionRepository.transactionByCard(cardNumber);
+        List<TransactionDTO> transactionDTOS = transactionRepository.transactionByCard(cardNumber);
         if (transactionDTOS.isEmpty()) {
             return false;
         }
